@@ -57,7 +57,7 @@ namespace Shoko.Plugin.SampleWithSettingsRenamer
 
                 // get the romaji title
                 string animeName = animeInfo?.Titles
-                    .FirstOrDefault(a => a.Language == "x-jat" && a.Type == TitleType.Main)?.Title;
+                    .FirstOrDefault(a => a.Language == TitleLanguage.Romaji && a.Type == TitleType.Main)?.Title;
 
                 // Filenames must be consistent (because OCD), so cancel and return if we can't make a consistent filename style
                 if (string.IsNullOrEmpty(animeName))
@@ -139,8 +139,10 @@ namespace Shoko.Plugin.SampleWithSettingsRenamer
                 Logger.Info($"SeriesName: {groupName}");
 
                 // There are very few cases where no x-jat main (romaji) title is available, but it happens.
-                string seriesNameWithFallback = (args.AnimeInfo.First().Titles.FirstOrDefault(a => a.Language == "x-jat" && a.Type == TitleType.Main)
-                    ?.Title ?? args.AnimeInfo.First().Titles.First().Title).ReplaceInvalidPathCharacters();
+                string seriesNameWithFallback =
+                    (args.AnimeInfo.First().Titles
+                         .FirstOrDefault(a => a.Language == TitleLanguage.Romaji && a.Type == TitleType.Main)?.Title ??
+                     args.AnimeInfo.First().Titles.First().Title).ReplaceInvalidPathCharacters();
                 Logger.Info($"SeriesName: {seriesNameWithFallback}");
 
                 // Use Path.Combine to form subdirectories with the slashes and whatnot handled for you.
