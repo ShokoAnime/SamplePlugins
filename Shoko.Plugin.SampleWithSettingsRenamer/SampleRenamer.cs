@@ -39,7 +39,7 @@ namespace Shoko.Plugin.SampleWithSettingsRenamer
             Settings = settings as SampleSettings;
         }
 
-        public void GetFilename(RenameEventArgs args)
+        public string GetFilename(RenameEventArgs args)
         {
             try
             {
@@ -63,7 +63,7 @@ namespace Shoko.Plugin.SampleWithSettingsRenamer
                 if (string.IsNullOrEmpty(animeName))
                 {
                     args.Cancel = true;
-                    return;
+                    return null;
                 }
                 Logger.Info($"AnimeName: {animeName}");
 
@@ -111,7 +111,7 @@ namespace Shoko.Plugin.SampleWithSettingsRenamer
                 result = result.ReplaceInvalidPathCharacters();
 
                 // Set the result
-                args.Result = result;
+                return result;
             }
             catch (Exception e)
             {
@@ -122,16 +122,18 @@ namespace Shoko.Plugin.SampleWithSettingsRenamer
                 // Log the error. We like to know when stuff breaks.
                 Logger.Error(e, $"Unable to get new filename for {args.FileInfo?.Filename}");
             }
+
+            return null;
         }
 
-        public void GetDestination(MoveEventArgs args)
+        public (IImportFolder destination, string subfolder) GetDestination(MoveEventArgs args)
         {
             try
             {
                 // Note: ReplaceInvalidPathCharacters() replaces things like slashes, pluses, etc with Unicode that looks similar
 
                 // Get the first available import folder that is a drop destination
-                args.DestinationImportFolder =
+                var destinationImportFolder =
                     args.AvailableFolders.First(a => a.DropFolderType.HasFlag(DropFolderType.Destination));
 
                 // Get a group name.
@@ -146,12 +148,15 @@ namespace Shoko.Plugin.SampleWithSettingsRenamer
                 Logger.Info($"SeriesName: {seriesNameWithFallback}");
 
                 // Use Path.Combine to form subdirectories with the slashes and whatnot handled for you.
-                args.DestinationPath = Path.Combine(groupName, seriesNameWithFallback);
+                var destinationPath = Path.Combine(groupName, seriesNameWithFallback);
+
+                return (destinationImportFolder, destinationPath);
             }
             catch (Exception e)
             {
                 // Log the error to Server
                 Logger.Error(e, $"Unable to get destination for {args.FileInfo?.Filename}");
+                throw;
             }
         }
     }

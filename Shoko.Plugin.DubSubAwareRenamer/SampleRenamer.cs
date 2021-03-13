@@ -67,7 +67,7 @@ namespace Renamer.Baine
         /// Get the new filename for a specified file
         /// </summary>
         /// <param name="args">Renaming Arguments, e.g. available folders</param>
-        public void GetFilename(RenameEventArgs args)
+        public string GetFilename(RenameEventArgs args)
         {
 
             //make args.FileInfo easier accessible. this refers to the actual file
@@ -131,7 +131,7 @@ namespace Renamer.Baine
             //after this: name = Showname - S03 - Specialname.mkv
 
             //set the name as the result, replacing invalid path characters (e.g. '/') with similar looking Unicode Characters
-            args.Result = name.ToString().ReplaceInvalidPathCharacters();
+            return name.ToString().ReplaceInvalidPathCharacters();
         }
 
         /// <summary>
@@ -139,7 +139,7 @@ namespace Renamer.Baine
         /// The target path depends on age restriction and available dubs/subs
         /// </summary>
         /// <param name="args">Arguments for the process, contains FileInfo and more</param>
-        public void GetDestination(MoveEventArgs args)
+        public (IImportFolder destination, string subfolder) GetDestination(MoveEventArgs args)
         {
             //get the anime the file in question is linked to
             var anime = args.AnimeInfo.First();
@@ -242,10 +242,11 @@ namespace Renamer.Baine
 
             //check if any of the available folders matches the constructed path in location, set it as destination
             var dest = args.AvailableFolders.FirstOrDefault(a => a.Location == location);
-            args.DestinationImportFolder = dest;
 
             //DestinationPath is the name of the final subfolder containing the episode files. Get it by preferrence
-            args.DestinationPath = GetTitleByPref(anime, TitleType.Official, TitleLanguage.German, TitleLanguage.English, TitleLanguage.Romaji).ReplaceInvalidPathCharacters();
+            var destinationPath = GetTitleByPref(anime, TitleType.Official, TitleLanguage.German, TitleLanguage.English, TitleLanguage.Romaji).ReplaceInvalidPathCharacters();
+
+            return (dest, destinationPath);
         }
 
         //nothing to do on plugin load

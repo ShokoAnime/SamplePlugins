@@ -22,27 +22,30 @@ namespace Shoko.Plugin.SampleWithSettingsRenamer
 
         public void OnSettingsLoaded(IPluginSettings settings) { }
 
-        public void GetFilename(RenameEventArgs args)
+        public string GetFilename(RenameEventArgs args)
         {
             try
             {
                 // This renamer doesn't do much. It check if there's an AniDB File, and returns the original filename
                 string originalFilename = args.FileInfo?.AniDBFileInfo?.OriginalFilename;
-                if (string.IsNullOrEmpty(originalFilename)) return;
+                if (string.IsNullOrEmpty(originalFilename)) return null;
 
                 // Set the result
-                args.Result = originalFilename;
+                return originalFilename;
             }
             catch (Exception e)
             {
                 // Log the error. We like to know when stuff breaks.
                 Logger.Error(e, $"Unable to get new filename for {args.FileInfo?.Filename}");
+
+                throw;
             }
         }
 
-        public void GetDestination(MoveEventArgs args)
+        public (IImportFolder destination, string subfolder) GetDestination(MoveEventArgs args)
         {
             // defer to next plugin or legacy drop folders
+            return (null, null);
         }
     }
 }
