@@ -4,10 +4,13 @@ using System.Linq;
 using System.Reflection;
 using NLog;
 using Shoko.Plugin.Abstractions;
+using Shoko.Plugin.Abstractions.Attributes;
 using Shoko.Plugin.Abstractions.DataModels;
 
 namespace Shoko.Plugin.SampleWithSettingsRenamer
 {
+    // Note!!!! This doesn't work ATM! The settings framework needs work.
+    [Renamer("SampleWithSettingsRenamer", Description = "A sample plugin that renames to a simple unified format and moves to a grouped folder structure")]
     public class SampleRenamer : IRenamer
     {
         // Be careful when using Nuget (NLog had to be installed for this project).
@@ -138,7 +141,7 @@ namespace Shoko.Plugin.SampleWithSettingsRenamer
 
                 // Get a group name.
                 string groupName = args.GroupInfo.First().Name.ReplaceInvalidPathCharacters();
-                Logger.Info($"SeriesName: {groupName}");
+                Logger.Info($"GroupName: {groupName}");
 
                 // There are very few cases where no x-jat main (romaji) title is available, but it happens.
                 string seriesNameWithFallback =

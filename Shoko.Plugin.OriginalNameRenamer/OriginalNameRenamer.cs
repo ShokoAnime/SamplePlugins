@@ -4,10 +4,12 @@ using System.Linq;
 using System.Reflection;
 using NLog;
 using Shoko.Plugin.Abstractions;
+using Shoko.Plugin.Abstractions.Attributes;
 using Shoko.Plugin.Abstractions.DataModels;
 
 namespace Shoko.Plugin.SampleWithSettingsRenamer
 {
+    [Renamer("OriginalNameRenamer", Description = "Renames files to the name that AniDB has listed at the time of release")]
     public class OriginalNameRenamer : IRenamer
     {
         // Be careful when using Nuget (NLog had to be installed for this project).
