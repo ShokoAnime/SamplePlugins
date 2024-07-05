@@ -1,93 +1,82 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using NLog;
+using Microsoft.Extensions.Logging;
 using Shoko.Plugin.Abstractions;
 using Shoko.Plugin.Abstractions.Attributes;
 using Shoko.Plugin.Abstractions.DataModels;
 
 namespace Shoko.Plugin.CopyToBackupRenamer;
 
-[Renamer("CopyToBackupRenamer",
-    Description = "Doesn't rename or move! It finds an Import Folder with 'Backup' in the name and copies to it")]
-public class CopyToBackupRenamer : IRenamer
+[RenamerID("CopyToBackupRenamer")]
+public class CopyToBackupRenamer : IRenamer<BackupSettings>
 {
-    // Be careful when using Nuget (NLog had to be installed for this project).
-    // Shoko already has and configures NLog, so it's safe to use, but other things may not be
-    private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+    // Use Microsoft.Extensions.Logging. The Dependency Injection container will inject the logger.
+    private readonly ILogger<CopyToBackupRenamer> _logger;
 
+    // This is used for a Name in the webui
     // Gets the current filename of the DLL (simplified)
-    // Resolves to "Shoko.Plugin.CopyToBackupRenamer"
-    public string Name => Assembly.GetExecutingAssembly().GetName().Name;
+    // Resolves to "Shoko.Plugin.OriginalNameRenamer"
+    // Another option is to use GetType().Name to get the name of this class
+    public string Name => GetType().Assembly.GetName().Name;
 
-    public void Load()
+    // this is used for a description in the webui
+    public string Description => "Doesn't rename or move! It copies files to a backup folder, with a directory structure";
+    // It won't run if both of these are false
+    public bool SupportsMoving => true;
+    public bool SupportsRenaming => false;
+    public BackupSettings DefaultSettings => null;
+
+    public CopyToBackupRenamer(ILogger<CopyToBackupRenamer> logger)
     {
+        _logger = logger;
     }
 
-    public void OnSettingsLoaded(IPluginSettings settings)
+    public RelocationResult GetNewPath(RelocationEventArgs<BackupSettings> args)
     {
-    }
-
-    public string GetFilename(RenameEventArgs args)
-    {
-        // defer! We don't do that here
-        return null;
-    }
-
-    public (IImportFolder destination, string subfolder) GetDestination(MoveEventArgs args)
-    {
-        // Get import folders, and find the one we want!
-        // if an import folder has a name of Backup or Backup is in the path, use that one
-        // for the sake of following our own rules, only choose it if it's a Destination or Both
-        var folder = args.AvailableFolders.FirstOrDefault(a =>
-            a.DropFolderType.HasFlag(DropFolderType.Destination) &&
-            (a.Name.Equals("Backup", StringComparison.InvariantCultureIgnoreCase) ||
-             a.Location.IndexOf("Backup", StringComparison.InvariantCultureIgnoreCase) > -1));
-
-        if (folder == null)
-        {
-            Logger.Error("Unable to get Backup folder.");
-            return (null, null);
-        }
+        var backupPath = args.Settings.BackupPath;
+        if (!Directory.Exists(backupPath))
+            return new RelocationResult { Error = new MoveRenameError("Backup path does not exist") };
 
         // Get a group name.
-        string groupName = args.GroupInfo.First().Name.ReplaceInvalidPathCharacters();
-        Logger.Info($"GroupName: {groupName}");
+        var groupName = args.GroupInfo.FirstOrDefault()?.Name.ReplaceInvalidPathCharacters();
+        if (string.IsNullOrEmpty(groupName))
+            return new RelocationResult { Error = new MoveRenameError("No Group Name was found") };
 
-        if (string.IsNullOrEmpty(groupName)) return (null, null);
+        _logger.LogInformation($"GroupName: {groupName}");
 
         // There are very few cases where no x-jat main (romaji) title is available, but it happens.
-        string seriesNameWithFallback =
+        var seriesNameWithFallback =
             (args.AnimeInfo.First().Titles
                  .FirstOrDefault(a => a.Language == TitleLanguage.Romaji && a.Type == TitleType.Main)?.Title ??
              args.AnimeInfo.First().Titles.First().Title).ReplaceInvalidPathCharacters();
-        Logger.Info($"SeriesName: {seriesNameWithFallback}");
-
-        if (string.IsNullOrEmpty(seriesNameWithFallback)) return (null, null);
+        _logger.LogInformation($"SeriesName: {seriesNameWithFallback}");
 
         // Use Path.Combine to form subdirectories with the slashes and whatnot handled for you.
-        var destinationPath = Path.Combine(folder.Location, groupName, seriesNameWithFallback);
+        var destinationPath = Path.Combine(backupPath, groupName, seriesNameWithFallback);
 
         try
         {
             // there is a lot that can go wrong when copying a file, so we are try/catching it
 
             // first make all of the necessary directories
-            Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
+            Directory.CreateDirectory(Path.Combine(backupPath, groupName));
 
             // try to copy the source file to the backup destination
             // args.FileInfo.FilePath is the full absolute path to the file
             // args.FileInfo.FilePath is the current filename
             // If you want the file to be renamed prior to this, then enable the setting Import -> RenameThenMove
-            File.Copy(args.FileInfo.FilePath, Path.Combine(destinationPath, args.FileInfo.Filename));
+            File.Copy(args.FileInfo.Path, Path.Combine(destinationPath, args.FileInfo.FileName));
         }
         catch (Exception e)
         {
-            Logger.Error(e, $"Unable to copy \"{args.FileInfo.Filename}\" to Backup");
+            _logger.LogError(e, $"Unable to copy \"{args.FileInfo.Path}\" to {Path.Combine(destinationPath, args.FileInfo.FileName)}");
         }
 
-        // defer to next plugin or legacy drop folders
-        return (null, null);
+        return new RelocationResult
+        {
+            DestinationImportFolder = args.FileInfo.ImportFolder,
+            Path = Path.GetDirectoryName(args.FileInfo.RelativePath)
+        };
     }
 }

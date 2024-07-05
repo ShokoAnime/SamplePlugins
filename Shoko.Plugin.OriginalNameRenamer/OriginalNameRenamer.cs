@@ -1,46 +1,52 @@
 ﻿using System;
-using System.Reflection;
-using NLog;
+using Microsoft.Extensions.Logging;
 using Shoko.Plugin.Abstractions;
 using Shoko.Plugin.Abstractions.Attributes;
-using Shoko.Plugin.Abstractions.DataModels;
 
 namespace Shoko.Plugin.OriginalNameRenamer;
 
-[Renamer("OriginalNameRenamer", Description = "Renames files to the name that AniDB has listed at the time of release")]
+// It's better to use an Attribute here, just in case you rename the class. This ID is what is used to identify the plugin in the store configs
+[RenamerID("OriginalNameRenamer")]
 public class OriginalNameRenamer : IRenamer
 {
-    // Be careful when using Nuget (NLog had to be installed for this project).
-    // Shoko already has and configures NLog, so it's safe to use, but other things may not be
-    private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+    // Use Microsoft.Extensions.Logging. The Dependency Injection container will inject the logger.
+    private readonly ILogger<OriginalNameRenamer> _logger;
 
+    // This is used for a Name in the webui
     // Gets the current filename of the DLL (simplified)
     // Resolves to "Shoko.Plugin.OriginalNameRenamer"
-    public string Name => Assembly.GetExecutingAssembly().GetName().Name;
+    // Another option is to use GetType().Name to get the name of this class
+    public string Name => GetType().Assembly.GetName().Name;
+    // this is used for a description in the webui
+    public string Description => "Renames files to the name that AniDB has listed at the time of release";
+    public bool SupportsMoving => false;
+    public bool SupportsRenaming => true;
 
-    public string GetFilename(RenameEventArgs args)
+    public OriginalNameRenamer(ILogger<OriginalNameRenamer> logger)
+    {
+        _logger = logger;
+    }
+
+    public RelocationResult GetNewPath(RelocationEventArgs args)
     {
         try
         {
-            // This renamer doesn't do much. It check if there's an AniDB File, and returns the original filename
-            string originalFilename = args.FileInfo?.AniDBFileInfo?.OriginalFilename;
-            if (string.IsNullOrEmpty(originalFilename)) return null;
+            // This doesn't do much. It checks if there's an AniDB File, and returns the original filename
+            var originalFilename = args.FileInfo.VideoInfo?.AniDB?.OriginalFilename;
+            if (string.IsNullOrEmpty(originalFilename))
+                return new RelocationResult {Error = new MoveRenameError("No Original Filename was found")};
 
-            // Set the result
-            return originalFilename;
+            // this doesn't support moving, so we just return the original filename
+            return new RelocationResult { FileName = originalFilename };
         }
         catch (Exception e)
         {
             // Log the error. We like to know when stuff breaks.
-            Logger.Error(e, $"Unable to get new filename for {args.FileInfo?.Filename}");
-
-            throw;
+            _logger.LogError(e, $"Unable to get new filename for {args.FileInfo.FileName}");
+            return new RelocationResult
+            {
+                Error = new MoveRenameError($"Unable to get new filename for {args.FileInfo.FileName}", e)
+            };
         }
-    }
-
-    public (IImportFolder destination, string subfolder) GetDestination(MoveEventArgs args)
-    {
-        // defer to next plugin or legacy drop folders
-        return (null, null);
     }
 }
