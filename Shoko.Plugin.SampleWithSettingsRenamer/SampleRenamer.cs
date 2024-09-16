@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Shoko.Plugin.Abstractions;
 using Shoko.Plugin.Abstractions.Attributes;
 using Shoko.Plugin.Abstractions.DataModels;
+using Shoko.Plugin.Abstractions.Events;
 
 namespace Shoko.Plugin.SampleWithSettingsRenamer;
 
@@ -49,14 +50,14 @@ public class SampleRenamer : IRenamer<SampleSettings>
             var settings = args.Settings;
 
             // get the release group
-            var release = args.FileInfo.VideoInfo?.AniDB?.ReleaseGroup.Name;
+            var release = args.File.Video?.AniDB?.ReleaseGroup.Name;
             _logger.LogInformation($"Release Group: {release}");
 
             // get the anime info
-            var animeInfo = args.AnimeInfo.FirstOrDefault();
+            var series = args.Series.FirstOrDefault();
 
             // get the main romaji title
-            var animeName = animeInfo?.Titles
+            var animeName = series?.Titles
                 .FirstOrDefault(a => a.Language == TitleLanguage.Romaji && a.Type == TitleType.Main)?.Title;
 
             // Filenames must be consistent (because OCD), so cancel and return if we can't make a consistent filename style
@@ -64,20 +65,20 @@ public class SampleRenamer : IRenamer<SampleSettings>
             {
                 return new RelocationResult
                 {
-                    Error = new MoveRenameError("No Anime Name was found")
+                    Error = new RelocationError("No Anime Name was found")
                 };
             }
 
             _logger.LogInformation($"AnimeName: {animeName}");
 
             // Get the episode info
-            var episodeInfo = args.EpisodeInfo.FirstOrDefault();
+            var episodeInfo = args.Episodes.FirstOrDefault();
 
             if (episodeInfo == null)
             {
                 return new RelocationResult
                 {
-                    Error = new MoveRenameError("No Episode Info was found")
+                    Error = new RelocationError("No Episode Info was found")
                 };
             }
 
@@ -85,45 +86,45 @@ public class SampleRenamer : IRenamer<SampleSettings>
             switch (episodeInfo.Type)
             {
                 case EpisodeType.Episode:
-                    paddedEpisodeNumber = episodeInfo.EpisodeNumber.PadZeroes(animeInfo.EpisodeCounts.Episodes);
+                    paddedEpisodeNumber = episodeInfo.EpisodeNumber.PadZeroes(series.EpisodeCounts.Episodes);
                     break;
                 case EpisodeType.Credits:
-                    paddedEpisodeNumber = "C" + episodeInfo.EpisodeNumber.PadZeroes(animeInfo.EpisodeCounts.Credits);
+                    paddedEpisodeNumber = "C" + episodeInfo.EpisodeNumber.PadZeroes(series.EpisodeCounts.Credits);
                     break;
                 case EpisodeType.Special:
-                    paddedEpisodeNumber = "S" + episodeInfo.EpisodeNumber.PadZeroes(animeInfo.EpisodeCounts.Specials);
+                    paddedEpisodeNumber = "S" + episodeInfo.EpisodeNumber.PadZeroes(series.EpisodeCounts.Specials);
                     break;
                 case EpisodeType.Trailer:
-                    paddedEpisodeNumber = "T" + episodeInfo.EpisodeNumber.PadZeroes(animeInfo.EpisodeCounts.Trailers);
+                    paddedEpisodeNumber = "T" + episodeInfo.EpisodeNumber.PadZeroes(series.EpisodeCounts.Trailers);
                     break;
                 case EpisodeType.Parody:
-                    paddedEpisodeNumber = "P" + episodeInfo.EpisodeNumber.PadZeroes(animeInfo.EpisodeCounts.Parodies);
+                    paddedEpisodeNumber = "P" + episodeInfo.EpisodeNumber.PadZeroes(series.EpisodeCounts.Parodies);
                     break;
                 case EpisodeType.Other:
-                    paddedEpisodeNumber = "O" + episodeInfo.EpisodeNumber.PadZeroes(animeInfo.EpisodeCounts.Others);
+                    paddedEpisodeNumber = "O" + episodeInfo.EpisodeNumber.PadZeroes(series.EpisodeCounts.Others);
                     break;
             }
 
             _logger.LogInformation($"Padded Episode Number: {paddedEpisodeNumber}");
 
             // get the info about the video stream from the MediaInfo
-            var videoInfo = args.FileInfo.VideoInfo?.MediaInfo?.Video;
+            var videoInfo = args.File.Video?.MediaInfo?.VideoStream;
 
             if (videoInfo == null)
             {
                 return new RelocationResult
                 {
-                    Error = new MoveRenameError("No Video Info was found")
+                    Error = new RelocationError("No Video Info was found")
                 };
             }
 
             // Get the extension of the original filename, it includes the .
-            var ext = Path.GetExtension(args.FileInfo.FileName);
+            var ext = Path.GetExtension(args.File.FileName);
 
             // The $ allows building a string with the squiggle brackets
             // build a string like "[HorribleSubs] Boku no Hero Academia - 04 [720p HEVC].mkv"
             var result =
-                $"[{release}] {animeName} - {paddedEpisodeNumber} [{videoInfo.StandardizedResolution} {videoInfo.SimplifiedCodec}]{ext}";
+                $"[{release}] {animeName} - {paddedEpisodeNumber} [{videoInfo.Resolution} {videoInfo.Codec.Simplified}]{ext}";
 
             // Use the Setting ApplyPrefix and Prefix to determine if we should apply a prefix
             if (settings.ApplyPrefix && !string.IsNullOrEmpty(settings.Prefix)) result = settings.Prefix + result;
@@ -137,14 +138,14 @@ public class SampleRenamer : IRenamer<SampleSettings>
                 args.AvailableFolders.First(a => a.DropFolderType.HasFlag(DropFolderType.Destination));
 
             // Get a group name.
-            var groupName = args.GroupInfo.First().Name.ReplaceInvalidPathCharacters();
+            var groupName = args.Groups.First().PreferredTitle.ReplaceInvalidPathCharacters();
             _logger.LogInformation($"GroupName: {groupName}");
 
             // There are very few cases where no x-jat main (romaji) title is available, but it happens.
             var seriesNameWithFallback =
-                (args.AnimeInfo.First().Titles
+                (args.Series.First().Titles
                      .FirstOrDefault(a => a.Language == TitleLanguage.Romaji && a.Type == TitleType.Main)?.Title ??
-                 args.AnimeInfo.First().Titles.First().Title).ReplaceInvalidPathCharacters();
+                 args.Series.First().Titles.First().Title).ReplaceInvalidPathCharacters();
 
             _logger.LogInformation($"SeriesName: {seriesNameWithFallback}");
 
@@ -162,10 +163,10 @@ public class SampleRenamer : IRenamer<SampleSettings>
         catch (Exception e)
         {
             // Log the error. We like to know when stuff breaks.
-            _logger.LogError(e, $"Unable to get new filename for {args.FileInfo.FileName}");
+            _logger.LogError(e, $"Unable to get new filename for {args.File.FileName}");
             return new RelocationResult
             {
-                Error = new MoveRenameError($"Unable to get new filename for {args.FileInfo.FileName}", e)
+                Error = new RelocationError($"Unable to get new filename for {args.File.FileName}", e)
             };
         }
     }

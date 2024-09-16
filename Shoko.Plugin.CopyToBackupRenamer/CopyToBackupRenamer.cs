@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Shoko.Plugin.Abstractions;
 using Shoko.Plugin.Abstractions.Attributes;
 using Shoko.Plugin.Abstractions.DataModels;
+using Shoko.Plugin.Abstractions.Events;
 
 namespace Shoko.Plugin.CopyToBackupRenamer;
 
@@ -36,20 +37,20 @@ public class CopyToBackupRenamer : IRenamer<BackupSettings>
     {
         var backupPath = args.Settings.BackupPath;
         if (!Directory.Exists(backupPath))
-            return new RelocationResult { Error = new MoveRenameError("Backup path does not exist") };
+            return new RelocationResult { Error = new RelocationError("Backup path does not exist") };
 
         // Get a group name.
-        var groupName = args.GroupInfo.FirstOrDefault()?.Name.ReplaceInvalidPathCharacters();
+        var groupName = args.Groups.FirstOrDefault()?.PreferredTitle.ReplaceInvalidPathCharacters();
         if (string.IsNullOrEmpty(groupName))
-            return new RelocationResult { Error = new MoveRenameError("No Group Name was found") };
+            return new RelocationResult { Error = new RelocationError("No Group Name was found") };
 
         _logger.LogInformation($"GroupName: {groupName}");
 
         // There are very few cases where no x-jat main (romaji) title is available, but it happens.
         var seriesNameWithFallback =
-            (args.AnimeInfo.First().Titles
+            (args.Series.First().Titles
                  .FirstOrDefault(a => a.Language == TitleLanguage.Romaji && a.Type == TitleType.Main)?.Title ??
-             args.AnimeInfo.First().Titles.First().Title).ReplaceInvalidPathCharacters();
+             args.Series.First().Titles.First().Title).ReplaceInvalidPathCharacters();
         _logger.LogInformation($"SeriesName: {seriesNameWithFallback}");
 
         // Use Path.Combine to form subdirectories with the slashes and whatnot handled for you.
@@ -63,20 +64,20 @@ public class CopyToBackupRenamer : IRenamer<BackupSettings>
             Directory.CreateDirectory(Path.Combine(backupPath, groupName));
 
             // try to copy the source file to the backup destination
-            // args.FileInfo.FilePath is the full absolute path to the file
-            // args.FileInfo.FilePath is the current filename
+            // args.File.FilePath is the full absolute path to the file
+            // args.File.FilePath is the current filename
             // If you want the file to be renamed prior to this, then enable the setting Import -> RenameThenMove
-            File.Copy(args.FileInfo.Path, Path.Combine(destinationPath, args.FileInfo.FileName));
+            File.Copy(args.File.Path, Path.Combine(destinationPath, args.File.FileName));
         }
         catch (Exception e)
         {
-            _logger.LogError(e, $"Unable to copy \"{args.FileInfo.Path}\" to {Path.Combine(destinationPath, args.FileInfo.FileName)}");
+            _logger.LogError(e, $"Unable to copy \"{args.File.Path}\" to {Path.Combine(destinationPath, args.File.FileName)}");
         }
 
         return new RelocationResult
         {
-            DestinationImportFolder = args.FileInfo.ImportFolder,
-            Path = Path.GetDirectoryName(args.FileInfo.RelativePath)
+            DestinationImportFolder = args.File.ImportFolder,
+            Path = Path.GetDirectoryName(args.File.RelativePath)
         };
     }
 }

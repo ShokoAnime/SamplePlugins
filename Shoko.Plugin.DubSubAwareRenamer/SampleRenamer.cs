@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Shoko.Plugin.Abstractions;
 using Shoko.Plugin.Abstractions.DataModels;
+using Shoko.Plugin.Abstractions.Events;
 
 namespace Renamer.Baine;
 
@@ -24,9 +25,9 @@ public class MyRenamer : IRenamer
     public RelocationResult GetNewPath(RelocationEventArgs args)
     {
         var filename = GetFilename(args);
-        if (string.IsNullOrEmpty(filename)) return new RelocationResult {Error = new MoveRenameError("Filename is empty")};
+        if (string.IsNullOrEmpty(filename)) return new RelocationResult {Error = new RelocationError("Filename is empty")};
         var destination = GetDestination(args);
-        if (destination == default) return new RelocationResult {Error = new MoveRenameError("Destination is empty")};
+        if (destination == default) return new RelocationResult {Error = new RelocationError("Destination is empty")};
 
         return new RelocationResult
         {
@@ -42,14 +43,14 @@ public class MyRenamer : IRenamer
     /// <param name="args">Renaming Arguments, e.g. available folders</param>
     public string GetFilename(RelocationEventArgs args)
     {
-        //make args.FileInfo easier accessible. this refers to the actual file
-        var video = args.FileInfo;
+        //make args.File easier accessible. this refers to the actual file
+        var video = args.File;
 
         //make the episode in question easier accessible. this refers to the episode the file is linked to
-        var episode = args.EpisodeInfo.First();
+        var episode = args.Episodes.First();
 
         //make the anime the episode belongs to easier accessible.
-        var anime = args.AnimeInfo.First();
+        var anime = args.Series.First();
 
         //start an empty StringBuilder
         //will be used to store the new filename
@@ -113,14 +114,14 @@ public class MyRenamer : IRenamer
     /// Get the new path for a specified file.
     /// The target path depends on age restriction and available dubs/subs
     /// </summary>
-    /// <param name="args">Arguments for the process, contains FileInfo and more</param>
+    /// <param name="args">Arguments for the process, contains File and more</param>
     public (IImportFolder destination, string subfolder) GetDestination(RelocationEventArgs args)
     {
         //get the anime the file in question is linked to
-        var anime = args.AnimeInfo.First();
+        var anime = args.Series.First();
 
-        //get the FileInfo of the file in question
-        var video = args.FileInfo.VideoInfo;
+        //get the File of the file in question
+        var video = args.File.Video;
 
         //check if the anime in question is restricted to 18+
         var isPorn = anime.Restricted;
@@ -136,16 +137,16 @@ public class MyRenamer : IRenamer
         try
         {
             //sub streams as provided by mediainfo
-            textStreamsFile = video.MediaInfo.Subs;
+            textStreamsFile = video?.MediaInfo?.TextStreams;
 
             //dub streams as provided by mediainfo
-            audioStreamsFile = video.MediaInfo.Audio;
+            audioStreamsFile = video?.MediaInfo?.AudioStreams;
 
             //sub languages as provided by anidb
-            textLanguagesAniDB = video.AniDB.MediaInfo.SubLanguages;
+            textLanguagesAniDB = video?.AniDB?.MediaInfo.SubLanguages;
 
             //sub languages as provided by anidb
-            audioLanguagesAniDB = video.AniDB.MediaInfo.AudioLanguages;
+            audioLanguagesAniDB = video?.AniDB?.MediaInfo.AudioLanguages;
         }
         catch
         {

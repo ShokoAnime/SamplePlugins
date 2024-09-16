@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Shoko.Plugin.Abstractions;
 using Shoko.Plugin.Abstractions.Attributes;
+using Shoko.Plugin.Abstractions.Events;
 
 namespace Shoko.Plugin.OriginalNameRenamer;
 
@@ -32,9 +33,9 @@ public class OriginalNameRenamer : IRenamer
         try
         {
             // This doesn't do much. It checks if there's an AniDB File, and returns the original filename
-            var originalFilename = args.FileInfo.VideoInfo?.AniDB?.OriginalFilename;
+            var originalFilename = args.File.Video?.AniDB?.OriginalFilename;
             if (string.IsNullOrEmpty(originalFilename))
-                return new RelocationResult {Error = new MoveRenameError("No Original Filename was found")};
+                return new RelocationResult {Error = new RelocationError("No Original Filename was found")};
 
             // this doesn't support moving, so we just return the original filename
             return new RelocationResult { FileName = originalFilename };
@@ -42,10 +43,10 @@ public class OriginalNameRenamer : IRenamer
         catch (Exception e)
         {
             // Log the error. We like to know when stuff breaks.
-            _logger.LogError(e, $"Unable to get new filename for {args.FileInfo.FileName}");
+            _logger.LogError(e, $"Unable to get new filename for {args.File.FileName}");
             return new RelocationResult
             {
-                Error = new MoveRenameError($"Unable to get new filename for {args.FileInfo.FileName}", e)
+                Error = new RelocationError($"Unable to get new filename for {args.File.FileName}", e)
             };
         }
     }
