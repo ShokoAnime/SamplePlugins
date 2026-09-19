@@ -3,4 +3,5 @@
   <Project Path="Shoko.Plugin.SampleWithSettingsRenamer/Shoko.Plugin.SampleWithSettingsRenamer.csproj" />
   <Project Path="Shoko.Plugin.SampleConfiguration/Shoko.Plugin.SampleConfiguration.csproj" />
   <Project Path="Shoko.Plugin.SampleEvents/Shoko.Plugin.SampleEvents.csproj" />
+  <Project Path="Shoko.Plugin.SampleWebApi/Shoko.Plugin.SampleWebApi.csproj" />
 </Solution>

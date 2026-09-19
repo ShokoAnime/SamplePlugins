@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/ShokoAnime/ShokoServer/master/Shoko.BuildTools/manifest.schema.json",
+  "id": "916cc80b-5d58-4a3f-9b85-da74e457d5dd",
+  "type": "package",
+  "name": "Sample: Web API and Actions",
+  "overview": "Serves its own API endpoints and SignalR hub, and adds actions users can run from the Web UI. A sample plugin.",
+  "authors": "Shoko",
+  "repository_url": "https://github.com/ShokoAnime/SamplePlugins",
+  "releases": []
+}
