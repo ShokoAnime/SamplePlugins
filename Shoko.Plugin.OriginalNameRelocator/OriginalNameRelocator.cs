@@ -1,7 +1,7 @@
 using Shoko.Abstractions.Extensions;
 using Shoko.Abstractions.Video.Relocation;
 
-namespace Shoko.Plugin.OriginalNameRenamer;
+namespace Shoko.Plugin.OriginalNameRelocator;
 
 /// <summary>
 /// Renames a file to its original release name, as recorded by the release
@@ -12,7 +12,7 @@ namespace Shoko.Plugin.OriginalNameRenamer;
 /// the user saves points at that ID. Pick the namespace and class name before
 /// you ship, and don't change them afterwards.
 /// </remarks>
-public class OriginalNameRenamer : IRelocationProvider
+public class OriginalNameRelocator : IRelocationProvider
 {
     /// <inheritdoc/>
     public string Name => "Original Name";
@@ -22,8 +22,9 @@ public class OriginalNameRenamer : IRelocationProvider
 
     /// <inheritdoc/>
     /// <remarks>
-    /// Only reported to clients. The server never checks it, so
-    /// <see cref="GetPath"/> still has to skip the move itself.
+    /// Declared <c>false</c>, so clients can grey out moving, and newer servers
+    /// ignore the move half of every result. <see cref="GetPath"/> skips the
+    /// move as well, so the sample behaves the same on older servers.
     /// </remarks>
     public bool SupportsMoving => false;
 

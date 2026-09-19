@@ -6,7 +6,7 @@ using Shoko.Abstractions.Metadata.Shoko;
 using Shoko.Abstractions.Video.Relocation;
 using Shoko.Abstractions.Video.Services;
 
-namespace Shoko.Plugin.SampleWithSettingsRenamer;
+namespace Shoko.Plugin.SampleWithSettingsRelocator;
 
 /// <summary>
 /// Renames files to <c>[Group] Series - 04 [1080p HEVC].mkv</c> and, when
@@ -18,10 +18,10 @@ namespace Shoko.Plugin.SampleWithSettingsRenamer;
 /// process, which is how it gets the relocation service below.
 /// </remarks>
 /// <param name="relocationService">Used for its destination folder helpers.</param>
-public class SampleRenamer(IVideoRelocationService relocationService) : IRelocationProvider<SampleRenamerConfiguration>
+public class SampleRelocator(IVideoRelocationService relocationService) : IRelocationProvider<SampleRelocatorConfiguration>
 {
     /// <inheritdoc/>
-    public string Name => "Sample Renamer";
+    public string Name => "Sample Relocator";
 
     /// <inheritdoc/>
     public string Description => "Renames files to a fixed format and sorts them into group and series folders.";
@@ -32,7 +32,7 @@ public class SampleRenamer(IVideoRelocationService relocationService) : IRelocat
     /// configuration. The non-generic one is never called, so it is left at
     /// its default.
     /// </remarks>
-    public RelocationResult GetPath(RelocationContext<SampleRenamerConfiguration> context)
+    public RelocationResult GetPath(RelocationContext<SampleRelocatorConfiguration> context)
     {
         var configuration = context.Configuration;
 

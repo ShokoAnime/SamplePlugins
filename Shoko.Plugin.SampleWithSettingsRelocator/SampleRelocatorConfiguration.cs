@@ -1,18 +1,18 @@
 using System.ComponentModel.DataAnnotations;
 using Shoko.Abstractions.Config;
 
-namespace Shoko.Plugin.SampleWithSettingsRenamer;
+namespace Shoko.Plugin.SampleWithSettingsRelocator;
 
 /// <summary>
-/// The settings for one relocation preset that uses the sample renamer.
+/// The settings for one relocation preset that uses the sample relocator.
 /// </summary>
 /// <remarks>
 /// A relocation provider configuration is not stored on its own. Each preset
 /// the user creates carries its own copy, and the server hands the preset's
-/// copy to <see cref="SampleRenamer.GetPath"/>. The property initializers are
+/// copy to <see cref="SampleRelocator.GetPath"/>. The property initializers are
 /// the defaults for a new preset.
 /// </remarks>
-public class SampleRenamerConfiguration : IRelocationProviderConfiguration
+public class SampleRelocatorConfiguration : IRelocationProviderConfiguration
 {
     /// <summary>
     /// Put the prefix in front of every file name.

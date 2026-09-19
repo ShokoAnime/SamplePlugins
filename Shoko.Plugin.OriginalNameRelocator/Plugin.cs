@@ -1,7 +1,7 @@
 using System;
 using Shoko.Abstractions.Plugin;
 
-namespace Shoko.Plugin.OriginalNameRenamer;
+namespace Shoko.Plugin.OriginalNameRelocator;
 
 /// <summary>
 /// The plugin's identity. The relocation provider next to it is found by the
@@ -17,7 +17,7 @@ public class Plugin : IPlugin
     public Guid ID { get; } = new("b0441b1b-2c17-4004-95e2-4f89ce776e55");
 
     /// <inheritdoc/>
-    public string Name => "Sample: Original Name Renamer";
+    public string Name => "Sample: Original Name Relocator";
 
     /// <inheritdoc/>
     public string Description => "Renames files to the name they were released under.";

@@ -19,8 +19,8 @@ Each folder is a separate plugin, with its own plugin ID and `manifest.json`.
 
 | Sample | What it shows |
 |---|---|
-| [`Shoko.Plugin.OriginalNameRenamer`](Shoko.Plugin.OriginalNameRenamer) | The smallest useful relocation provider: rename a file to its original release name, never move it, and return errors instead of throwing. |
-| [`Shoko.Plugin.SampleWithSettingsRenamer`](Shoko.Plugin.SampleWithSettingsRenamer) | A relocation provider with settings stored per preset, honouring the rename and move switches, and choosing a destination with the relocation service's folder helpers. |
+| [`Shoko.Plugin.OriginalNameRelocator`](Shoko.Plugin.OriginalNameRelocator) | The smallest useful relocation provider: rename a file to its original release name, never move it, and return errors instead of throwing. |
+| [`Shoko.Plugin.SampleWithSettingsRelocator`](Shoko.Plugin.SampleWithSettingsRelocator) | A relocation provider with settings stored per preset, honouring the rename and move switches, and choosing a destination with the relocation service's folder helpers. |
 | [`Shoko.Plugin.SampleConfiguration`](Shoko.Plugin.SampleConfiguration) | A settings page from a plain class: a secret, descriptions from XML `<summary>` comments, a "Test Connection" button, reading the settings where they are used, and reacting when they are saved. |
 | [`Shoko.Plugin.SampleEvents`](Shoko.Plugin.SampleEvents) | `IPlugin.Setup` and `IPlugin.Ready`, a hosted service that subscribes to file, release and series events safely, and a queue job that does the actual work. |
 | [`Shoko.Plugin.SampleWebApi`](Shoko.Plugin.SampleWebApi) | API controllers and a SignalR hub under one route namespace, the startup and database gates, a global action and a series action, and running an action on behalf of the calling user. |

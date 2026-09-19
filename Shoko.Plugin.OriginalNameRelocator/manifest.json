@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/ShokoAnime/ShokoServer/master/Shoko.BuildTools/manifest.schema.json",
   "id": "b0441b1b-2c17-4004-95e2-4f89ce776e55",
   "type": "package",
-  "name": "Sample: Original Name Renamer",
+  "name": "Sample: Original Name Relocator",
   "overview": "Renames files to the name they were released under. A sample plugin.",
   "authors": "Shoko",
   "repository_url": "https://github.com/ShokoAnime/SamplePlugins",
