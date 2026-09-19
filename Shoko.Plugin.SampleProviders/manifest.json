@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/ShokoAnime/ShokoServer/master/Shoko.BuildTools/manifest.schema.json",
+  "id": "0cf2ea5a-43d0-4cf6-ac33-b0ae87e777b2",
+  "type": "package",
+  "name": "Sample: Providers",
+  "overview": "A release info provider that reads AniDB episode IDs from file names, and a hash provider for the OpenSubtitles hash. A sample plugin.",
+  "authors": "Shoko",
+  "repository_url": "https://github.com/ShokoAnime/SamplePlugins",
+  "releases": []
+}
