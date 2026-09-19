@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/ShokoAnime/ShokoServer/master/Shoko.BuildTools/manifest.schema.json",
+  "id": "7331416c-168b-495c-bb6b-43c38aa4f2f7",
+  "type": "package",
+  "name": "Sample: Configuration",
+  "overview": "A settings page with a secret and a test button, and code that reads the settings where it uses them. A sample plugin.",
+  "authors": "Shoko",
+  "repository_url": "https://github.com/ShokoAnime/SamplePlugins",
+  "releases": []
+}
