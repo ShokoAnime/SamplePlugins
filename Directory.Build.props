@@ -12,6 +12,10 @@
         <!-- Copies third-party dependencies into the output folder, so the
              folder is the whole plugin. -->
         <EnableDynamicLoading>true</EnableDynamicLoading>
+        <!-- A plugin is loaded into a running server, so nothing ever reads a
+             runtimeconfig.json. The deps.json is kept: the server uses it to
+             find the plugin's entry assembly. -->
+        <GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
         <!-- Configuration descriptions are read from XML <summary> comments,
              and only exist when this file is generated and shipped. -->
         <GenerateDocumentationFile>true</GenerateDocumentationFile>

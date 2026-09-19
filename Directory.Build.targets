@@ -1,0 +1,17 @@
+<Project>
+    <!--
+        The server already loads its own copies of these. A plugin that ships
+        another copy binds against the wrong one, and for Shoko.Abstractions
+        the server skips the plugin without an error. ExcludeAssets on each
+        PackageReference keeps them out; this check notices when one slips
+        back in, which a transitive reference can do without a warning.
+    -->
+    <Target Name="HostProvidedAssembliesStayOut" AfterTargets="Build">
+        <ItemGroup>
+            <!-- Wildcards, so only files that exist are matched. -->
+            <_HostProvided Include="$(OutDir)Shoko.Abstractions*.dll;$(OutDir)Shoko.QueueProcessor*.dll;$(OutDir)Newtonsoft.Json*.dll;$(OutDir)NJsonSchema*.dll;$(OutDir)Microsoft.EntityFrameworkCore*.dll;$(OutDir)runtimes/**/*" />
+        </ItemGroup>
+        <Error Condition="'@(_HostProvided)' != ''"
+               Text="The plugin output carries files the server already provides: @(_HostProvided->'%(Filename)%(Extension)', ', '). Add ExcludeAssets=&quot;runtime&quot; (and &quot;native&quot; for packages with native libraries) to the PackageReference that brought them in." />
+    </Target>
+</Project>
