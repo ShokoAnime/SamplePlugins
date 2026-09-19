@@ -1,53 +1,51 @@
-﻿using System;
-using Microsoft.Extensions.Logging;
-using Shoko.Plugin.Abstractions;
-using Shoko.Plugin.Abstractions.Attributes;
-using Shoko.Plugin.Abstractions.Events;
+using Shoko.Abstractions.Extensions;
+using Shoko.Abstractions.Video.Relocation;
 
 namespace Shoko.Plugin.OriginalNameRenamer;
 
-// It's better to use an Attribute here, just in case you rename the class. This ID is what is used to identify the plugin in the store configs
-[RenamerID("OriginalNameRenamer")]
-public class OriginalNameRenamer : IRenamer
+/// <summary>
+/// Renames a file to its original release name, as recorded by the release
+/// info provider that matched it.
+/// </summary>
+/// <remarks>
+/// The provider ID is derived from this type's full name, and every preset
+/// the user saves points at that ID. Pick the namespace and class name before
+/// you ship, and don't change them afterwards.
+/// </remarks>
+public class OriginalNameRenamer : IRelocationProvider
 {
-    // Use Microsoft.Extensions.Logging. The Dependency Injection container will inject the logger.
-    private readonly ILogger<OriginalNameRenamer> _logger;
+    /// <inheritdoc/>
+    public string Name => "Original Name";
 
-    // This is used for a Name in the webui
-    // Gets the current filename of the DLL (simplified)
-    // Resolves to "Shoko.Plugin.OriginalNameRenamer"
-    // Another option is to use GetType().Name to get the name of this class
-    public string Name => GetType().Assembly.GetName().Name;
-    // this is used for a description in the webui
-    public string Description => "Renames files to the name that AniDB has listed at the time of release";
+    /// <inheritdoc/>
+    public string Description => "Renames files to the name they were released under. Never moves them.";
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Only reported to clients. The server never checks it, so
+    /// <see cref="GetPath"/> still has to skip the move itself.
+    /// </remarks>
     public bool SupportsMoving => false;
-    public bool SupportsRenaming => true;
 
-    public OriginalNameRenamer(ILogger<OriginalNameRenamer> logger)
+    /// <inheritdoc/>
+    public RelocationResult GetPath(RelocationContext context)
     {
-        _logger = logger;
-    }
-
-    public RelocationResult GetNewPath(RelocationEventArgs args)
-    {
-        try
+        // GetPath runs for previews too, and the context looks identical, so
+        // it must never have side effects. Return an error rather than
+        // throwing: the message is what the user sees.
+        var result = new RelocationResult { SkipMove = true };
+        if (!context.RenameEnabled)
         {
-            // This doesn't do much. It checks if there's an AniDB File, and returns the original filename
-            var originalFilename = args.File.Video?.AniDB?.OriginalFilename;
-            if (string.IsNullOrEmpty(originalFilename))
-                return new RelocationResult {Error = new RelocationError("No Original Filename was found")};
+            result.SkipRename = true;
+            return result;
+        }
 
-            // this doesn't support moving, so we just return the original filename
-            return new RelocationResult { FileName = originalFilename };
-        }
-        catch (Exception e)
-        {
-            // Log the error. We like to know when stuff breaks.
-            _logger.LogError(e, $"Unable to get new filename for {args.File.FileName}");
-            return new RelocationResult
-            {
-                Error = new RelocationError($"Unable to get new filename for {args.File.FileName}", e)
-            };
-        }
+        if (context.Video.ReleaseInfo?.OriginalFilename is not { Length: > 0 } originalFilename)
+            return RelocationResult.FromError("The release has no original file name.");
+
+        // The name comes from a remote database, so make it safe for every
+        // file system before handing it back.
+        result.FileName = originalFilename.ReplaceInvalidPathCharacters();
+        return result;
     }
 }
