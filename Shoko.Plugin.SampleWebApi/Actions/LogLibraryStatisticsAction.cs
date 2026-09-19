@@ -20,7 +20,11 @@ namespace Shoko.Plugin.SampleWebApi.Actions;
 /// <param name="metadataService">Used to count the series.</param>
 /// <param name="videoService">Used to count the videos.</param>
 /// <param name="logger">The logger.</param>
-public class LogLibraryStatisticsAction(IMetadataService metadataService, IVideoService videoService, ILogger<LogLibraryStatisticsAction> logger) : IExecutableAction
+public class LogLibraryStatisticsAction(
+    IMetadataService metadataService,
+    IVideoService videoService,
+    ILogger<LogLibraryStatisticsAction> logger
+) : IExecutableAction
 {
     /// <inheritdoc/>
     public string Name => "Log Library Statistics";

@@ -84,7 +84,11 @@ public class DashboardController : ControllerBase
         var assembly = typeof(DashboardController).Assembly;
         return assembly.GetManifestResourceNames()
             .Where(name => name.StartsWith(ResourcePrefix, StringComparison.Ordinal))
-            .ToFrozenDictionary(name => name[ResourcePrefix.Length..], name => LoadAsset(assembly.GetManifestResourceStream(name)!, name[ResourcePrefix.Length..]), StringComparer.Ordinal);
+            .ToFrozenDictionary(
+                name => name[ResourcePrefix.Length..],
+                name => LoadAsset(assembly.GetManifestResourceStream(name)!, name[ResourcePrefix.Length..]),
+                StringComparer.Ordinal
+            );
     }
 
     private static Asset LoadAsset(Stream stream, string path)

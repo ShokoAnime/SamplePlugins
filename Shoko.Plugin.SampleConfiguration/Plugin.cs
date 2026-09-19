@@ -65,7 +65,8 @@ public class Plugin : IPlugin, IPluginServiceRegistration
         // escaping this handler would disappear without a log line.
         try
         {
-            _logger?.LogInformation("The sample configuration was saved. An API key is {State}.", eventArgs.Configuration.ApiKey is { Length: > 0 } ? "set" : "not set");
+            var state = eventArgs.Configuration.ApiKey is { Length: > 0 } ? "set" : "not set";
+            _logger?.LogInformation("The sample configuration was saved. An API key is {State}.", state);
         }
         catch (Exception ex)
         {

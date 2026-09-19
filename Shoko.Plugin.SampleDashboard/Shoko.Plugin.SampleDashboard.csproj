@@ -11,7 +11,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <DashboardSource Include="Dashboard/index.html;Dashboard/package.json;Dashboard/pnpm-lock.yaml;Dashboard/vite.config.js;Dashboard/src/**/*" />
+        <DashboardSource Include="Dashboard/index.html;Dashboard/package.json;Dashboard/pnpm-lock.yaml" />
+        <DashboardSource Include="Dashboard/vite.config.js;Dashboard/src/**/*" />
     </ItemGroup>
 
     <!--
@@ -36,7 +37,8 @@
         <Exec Command="pnpm --version" IgnoreExitCode="true" EchoOff="true" StandardOutputImportance="low" StandardErrorImportance="low">
             <Output TaskParameter="ExitCode" PropertyName="_PnpmExitCode" />
         </Exec>
-        <Message Condition="'$(_PnpmExitCode)' != '0'" Importance="high" Text="pnpm was not found, so the dashboard was not built. Install Node.js and pnpm to include it." />
+        <Message Condition="'$(_PnpmExitCode)' != '0'" Importance="high"
+                 Text="pnpm was not found, so the dashboard was not built. Install Node.js and pnpm to include it." />
         <CallTarget Condition="'$(_PnpmExitCode)' == '0'" Targets="_BuildDashboardWithPnpm" />
     </Target>
 

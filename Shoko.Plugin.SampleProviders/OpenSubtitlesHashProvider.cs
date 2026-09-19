@@ -45,6 +45,9 @@ public class OpenSubtitlesHashProvider : IHashProvider
     public IReadOnlySet<string> AvailableHashTypes { get; } = new HashSet<string> { HashType };
 
     /// <inheritdoc/>
+    /// <exception cref="IOException">The file could not be read.</exception>
+    /// <exception cref="UnauthorizedAccessException">The server may not read the file.</exception>
+    /// <exception cref="OperationCanceledException">The hash run was cancelled.</exception>
     public async Task<IReadOnlyCollection<HashDigest>> GetHashesForVideo(HashingRequest request, CancellationToken cancellationToken = default)
     {
         var (file, existingHashes, enabledHashTypes) = request;

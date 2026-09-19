@@ -9,9 +9,11 @@
     <Target Name="HostProvidedAssembliesStayOut" AfterTargets="Build">
         <ItemGroup>
             <!-- Wildcards, so only files that exist are matched. -->
-            <_HostProvided Include="$(OutDir)Shoko.Abstractions*.dll;$(OutDir)Shoko.QueueProcessor*.dll;$(OutDir)Newtonsoft.Json*.dll;$(OutDir)NJsonSchema*.dll;$(OutDir)Microsoft.EntityFrameworkCore*.dll;$(OutDir)runtimes/**/*" />
+            <_HostProvided Include="$(OutDir)Shoko.Abstractions*.dll;$(OutDir)Shoko.QueueProcessor*.dll" />
+            <_HostProvided Include="$(OutDir)Newtonsoft.Json*.dll;$(OutDir)NJsonSchema*.dll;$(OutDir)Microsoft.EntityFrameworkCore*.dll" />
+            <_HostProvided Include="$(OutDir)runtimes/**/*" />
         </ItemGroup>
         <Error Condition="'@(_HostProvided)' != ''"
-               Text="The plugin output carries files the server already provides: @(_HostProvided->'%(Filename)%(Extension)', ', '). Add ExcludeAssets=&quot;runtime&quot; (and &quot;native&quot; for packages with native libraries) to the PackageReference that brought them in." />
+               Text="The plugin output carries files the server already provides: @(_HostProvided->'%(Filename)%(Extension)', ', '). Add ExcludeAssets=&quot;runtime&quot; (and &quot;native&quot; for a package with native libraries) to the PackageReference that brought them in." />
     </Target>
 </Project>
