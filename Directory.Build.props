@@ -1,0 +1,19 @@
+<Project>
+    <!--
+        Settings every sample shares. A project copied out of this repository
+        needs these in its own csproj.
+    -->
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <OutputType>Library</OutputType>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <Version>1.0.0</Version>
+        <!-- Copies third-party dependencies into the output folder, so the
+             folder is the whole plugin. -->
+        <EnableDynamicLoading>true</EnableDynamicLoading>
+        <!-- Configuration descriptions are read from XML <summary> comments,
+             and only exist when this file is generated and shipped. -->
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+</Project>
