@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/ShokoAnime/ShokoServer/master/Shoko.BuildTools/manifest.schema.json",
+  "id": "4b7280b2-af12-4e0b-afc6-b599aa02dae5",
+  "type": "package",
+  "name": "Sample: Events and Lifecycle",
+  "overview": "Reacts to library events without slowing the server down, and hands the work to a queue job. A sample plugin.",
+  "authors": "Shoko",
+  "repository_url": "https://github.com/ShokoAnime/SamplePlugins",
+  "releases": []
+}
