@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/ShokoAnime/ShokoServer/master/Shoko.BuildTools/manifest.schema.json",
+  "id": "62c4b8eb-57f5-4c41-9818-17eec3e5c3be",
+  "type": "package",
+  "name": "Sample: Renamer With Settings",
+  "overview": "Renames files to a fixed format and sorts them into group and series folders, with per-preset settings. A sample plugin.",
+  "authors": "Shoko",
+  "repository_url": "https://github.com/ShokoAnime/SamplePlugins",
+  "releases": []
+}

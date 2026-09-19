@@ -1,173 +1,123 @@
-﻿using System;
 using System.IO;
 using System.Linq;
-using Microsoft.Extensions.Logging;
-using Shoko.Plugin.Abstractions;
-using Shoko.Plugin.Abstractions.Attributes;
-using Shoko.Plugin.Abstractions.DataModels;
-using Shoko.Plugin.Abstractions.Events;
+using Shoko.Abstractions.Extensions;
+using Shoko.Abstractions.Metadata.Enums;
+using Shoko.Abstractions.Metadata.Shoko;
+using Shoko.Abstractions.Video.Relocation;
+using Shoko.Abstractions.Video.Services;
 
 namespace Shoko.Plugin.SampleWithSettingsRenamer;
 
-[RenamerID("SampleWithSettingsRenamer")]
-public class SampleRenamer : IRenamer<SampleSettings>
+/// <summary>
+/// Renames files to <c>[Group] Series - 04 [1080p HEVC].mkv</c> and, when
+/// enabled, moves them into <c>Group/Series</c> folders.
+/// </summary>
+/// <remarks>
+/// Nothing registers this class. The server finds it, builds it with
+/// constructor injection, and keeps that one instance for the life of the
+/// process, which is how it gets the relocation service below.
+/// </remarks>
+/// <param name="relocationService">Used for its destination folder helpers.</param>
+public class SampleRenamer(IVideoRelocationService relocationService) : IRelocationProvider<SampleRenamerConfiguration>
 {
-    // Use Microsoft.Extensions.Logging. The Dependency Injection container will inject the logger.
-    private readonly ILogger<SampleRenamer> _logger;
+    /// <inheritdoc/>
+    public string Name => "Sample Renamer";
 
-    // This is used for a Name in the webui
-    // Gets the current filename of the DLL (simplified)
-    // Resolves to "Shoko.Plugin.OriginalNameRenamer"
-    // Another option is to use GetType().Name to get the name of this class
-    public string Name => GetType().Assembly.GetName().Name;
+    /// <inheritdoc/>
+    public string Description => "Renames files to a fixed format and sorts them into group and series folders.";
 
-    // this is used for a description in the webui
-    public string Description => "A sample plugin that renames to a simple unified format and moves to a grouped folder structure";
-    public bool SupportsMoving => false;
-    public bool SupportsRenaming => true;
-
-    public SampleSettings DefaultSettings => new()
+    /// <inheritdoc/>
+    /// <remarks>
+    /// This is the overload the server calls for a provider with a
+    /// configuration. The non-generic one is never called, so it is left at
+    /// its default.
+    /// </remarks>
+    public RelocationResult GetPath(RelocationContext<SampleRenamerConfiguration> context)
     {
-        ApplyPrefix = true,
-        Prefix = "[Renamed from my plugin] "
-    };
+        var configuration = context.Configuration;
 
-    public SampleRenamer(ILogger<SampleRenamer> logger)
-    {
-        _logger = logger;
+        // SupportsUnrecognized and SupportsIncompleteMetadata are left false,
+        // so every file that gets here has at least one episode and series.
+        // Checking anyway keeps a mistake in the server from becoming a crash.
+        if (context.Episodes is not [var episode, ..] || context.Series is not [var series, ..])
+            return RelocationResult.FromError("The file is not linked to an episode and series.");
+
+        var result = new RelocationResult();
+        var seriesName = GetRomajiTitle(series).ReplaceInvalidPathCharacters();
+
+        #region Rename
+
+        if (context.RenameEnabled)
+        {
+            if (context.Video.MediaInfo?.VideoStream is not { } videoStream)
+                return RelocationResult.FromError("The file has no media info, so its resolution and codec are unknown.");
+
+            var release = context.Video.ReleaseInfo?.Group is { ShortName: { Length: > 0 } groupName } ? $"[{groupName}] " : string.Empty;
+            var episodeNumber = GetEpisodeNumber(episode, series);
+            var extension = Path.GetExtension(context.File.FileName);
+            var fileName = $"{release}{seriesName} - {episodeNumber} [{videoStream.Resolution} {videoStream.Codec.Simplified}]{extension}";
+            if (configuration.ApplyPrefix && !string.IsNullOrEmpty(configuration.Prefix))
+                fileName = configuration.Prefix + fileName;
+
+            result.FileName = fileName.ReplaceInvalidPathCharacters();
+        }
+        else
+        {
+            result.SkipRename = true;
+        }
+
+        #endregion
+
+        #region Move
+
+        if (context.MoveEnabled && configuration.SortIntoFolders)
+        {
+            if (relocationService.GetExistingSeriesLocationWithSpace(context) is { } existing)
+            {
+                result.ManagedFolder = existing.ManagedFolder;
+                result.Path = existing.RelativePath;
+            }
+            else if (relocationService.GetFirstDestinationWithSpace(context) is { } destination)
+            {
+                var groupName = context.Groups is [var group, ..] ? group.Title.ReplaceInvalidPathCharacters() : seriesName;
+                result.ManagedFolder = destination;
+                result.Path = Path.Combine(groupName, seriesName);
+            }
+            else
+            {
+                return RelocationResult.FromError("No destination folder has enough free space.");
+            }
+        }
+        else
+        {
+            result.SkipMove = true;
+        }
+
+        #endregion
+
+        return result;
     }
 
-    public RelocationResult GetNewPath(RelocationEventArgs<SampleSettings> args)
+    #region Helpers
+
+    private static string GetRomajiTitle(IShokoSeries series)
+        => series.Titles.FirstOrDefault(title => title is { Language: TitleLanguage.Romaji, Type: TitleType.Main })?.Value ?? series.Title;
+
+    private static string GetEpisodeNumber(IShokoEpisode episode, IShokoSeries series)
     {
-        try
+        // Pad to the width of the highest number of that type, so the files
+        // sort in order: 01 to 12, or 001 to 120.
+        var number = episode.EpisodeNumber.PadZeroes(series.EpisodeCounts[episode.Type]);
+        return episode.Type switch
         {
-            // The question marks everywhere are called Null Coalescence. It's a shorthand for checking if things exist.
-
-            // Technically, there can be more than one episode, series, and group (https://anidb.net/episode/129141).
-            // almost always, there will be only one.
-
-            // the settings are in event args
-            var settings = args.Settings;
-
-            // get the release group
-            var release = args.File.Video?.AniDB?.ReleaseGroup.Name;
-            _logger.LogInformation($"Release Group: {release}");
-
-            // get the anime info
-            var series = args.Series.FirstOrDefault();
-
-            // get the main romaji title
-            var animeName = series?.Titles
-                .FirstOrDefault(a => a.Language == TitleLanguage.Romaji && a.Type == TitleType.Main)?.Title;
-
-            // Filenames must be consistent (because OCD), so cancel and return if we can't make a consistent filename style
-            if (string.IsNullOrEmpty(animeName))
-            {
-                return new RelocationResult
-                {
-                    Error = new RelocationError("No Anime Name was found")
-                };
-            }
-
-            _logger.LogInformation($"AnimeName: {animeName}");
-
-            // Get the episode info
-            var episodeInfo = args.Episodes.FirstOrDefault();
-
-            if (episodeInfo == null)
-            {
-                return new RelocationResult
-                {
-                    Error = new RelocationError("No Episode Info was found")
-                };
-            }
-
-            string paddedEpisodeNumber = null;
-            switch (episodeInfo.Type)
-            {
-                case EpisodeType.Episode:
-                    paddedEpisodeNumber = episodeInfo.EpisodeNumber.PadZeroes(series.EpisodeCounts.Episodes);
-                    break;
-                case EpisodeType.Credits:
-                    paddedEpisodeNumber = "C" + episodeInfo.EpisodeNumber.PadZeroes(series.EpisodeCounts.Credits);
-                    break;
-                case EpisodeType.Special:
-                    paddedEpisodeNumber = "S" + episodeInfo.EpisodeNumber.PadZeroes(series.EpisodeCounts.Specials);
-                    break;
-                case EpisodeType.Trailer:
-                    paddedEpisodeNumber = "T" + episodeInfo.EpisodeNumber.PadZeroes(series.EpisodeCounts.Trailers);
-                    break;
-                case EpisodeType.Parody:
-                    paddedEpisodeNumber = "P" + episodeInfo.EpisodeNumber.PadZeroes(series.EpisodeCounts.Parodies);
-                    break;
-                case EpisodeType.Other:
-                    paddedEpisodeNumber = "O" + episodeInfo.EpisodeNumber.PadZeroes(series.EpisodeCounts.Others);
-                    break;
-            }
-
-            _logger.LogInformation($"Padded Episode Number: {paddedEpisodeNumber}");
-
-            // get the info about the video stream from the MediaInfo
-            var videoInfo = args.File.Video?.MediaInfo?.VideoStream;
-
-            if (videoInfo == null)
-            {
-                return new RelocationResult
-                {
-                    Error = new RelocationError("No Video Info was found")
-                };
-            }
-
-            // Get the extension of the original filename, it includes the .
-            var ext = Path.GetExtension(args.File.FileName);
-
-            // The $ allows building a string with the squiggle brackets
-            // build a string like "[HorribleSubs] Boku no Hero Academia - 04 [720p HEVC].mkv"
-            var result =
-                $"[{release}] {animeName} - {paddedEpisodeNumber} [{videoInfo.Resolution} {videoInfo.Codec.Simplified}]{ext}";
-
-            // Use the Setting ApplyPrefix and Prefix to determine if we should apply a prefix
-            if (settings.ApplyPrefix && !string.IsNullOrEmpty(settings.Prefix)) result = settings.Prefix + result;
-            result = result.ReplaceInvalidPathCharacters();
-
-            // now for the destination
-            // Note: ReplaceInvalidPathCharacters() replaces things like slashes, pluses, etc. with Unicode that looks similar
-
-            // Get the first available import folder that is a drop destination
-            var destinationImportFolder =
-                args.AvailableFolders.First(a => a.DropFolderType.HasFlag(DropFolderType.Destination));
-
-            // Get a group name.
-            var groupName = args.Groups.First().PreferredTitle.ReplaceInvalidPathCharacters();
-            _logger.LogInformation($"GroupName: {groupName}");
-
-            // There are very few cases where no x-jat main (romaji) title is available, but it happens.
-            var seriesNameWithFallback =
-                (args.Series.First().Titles
-                     .FirstOrDefault(a => a.Language == TitleLanguage.Romaji && a.Type == TitleType.Main)?.Title ??
-                 args.Series.First().Titles.First().Title).ReplaceInvalidPathCharacters();
-
-            _logger.LogInformation($"SeriesName: {seriesNameWithFallback}");
-
-            // Use Path.Combine to form subdirectories with the slashes and whatnot handled for you.
-            var destinationPath = Path.Combine(groupName, seriesNameWithFallback);
-
-            // Set the result
-            return new RelocationResult
-            {
-                FileName = result,
-                DestinationImportFolder = destinationImportFolder,
-                Path = destinationPath
-            };
-        }
-        catch (Exception e)
-        {
-            // Log the error. We like to know when stuff breaks.
-            _logger.LogError(e, $"Unable to get new filename for {args.File.FileName}");
-            return new RelocationResult
-            {
-                Error = new RelocationError($"Unable to get new filename for {args.File.FileName}", e)
-            };
-        }
+            EpisodeType.Episode => number,
+            EpisodeType.Special => $"S{number}",
+            EpisodeType.Credits => $"C{number}",
+            EpisodeType.Trailer => $"T{number}",
+            EpisodeType.Parody => $"P{number}",
+            _ => $"O{number}",
+        };
     }
+
+    #endregion
 }

@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="Shoko.Plugin.OriginalNameRenamer/Shoko.Plugin.OriginalNameRenamer.csproj" />
+  <Project Path="Shoko.Plugin.SampleWithSettingsRenamer/Shoko.Plugin.SampleWithSettingsRenamer.csproj" />
 </Solution>
