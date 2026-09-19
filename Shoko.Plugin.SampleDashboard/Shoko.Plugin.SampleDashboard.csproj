@@ -1,0 +1,106 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <DashboardSourceDir>$(MSBuildProjectDirectory)/Dashboard/</DashboardSourceDir>
+        <!-- Keeps MSBuild from walking node_modules for C# files. -->
+        <DefaultItemExcludes>$(DefaultItemExcludes);Dashboard/node_modules/**</DefaultItemExcludes>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Shoko.Abstractions" Version="6.0.0-alpha.92" ExcludeAssets="runtime" />
+        <PackageReference Include="Shoko.BuildTools.Targets" Version="0.3.0" PrivateAssets="All" ExcludeAssets="runtime" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <DashboardSource Include="Dashboard/index.html;Dashboard/package.json;Dashboard/pnpm-lock.yaml;Dashboard/vite.config.js;Dashboard/src/**/*" />
+    </ItemGroup>
+
+    <!--
+        IntermediateOutputPath (obj/<configuration>/<framework>/) is only set
+        once the SDK targets are imported, after this file's own properties,
+        so paths built from it are declared in a target.
+    -->
+    <Target Name="_SetDashboardPaths">
+        <PropertyGroup>
+            <DashboardBuildDir>$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '$(IntermediateOutputPath)', 'dashboard'))</DashboardBuildDir>
+            <DashboardCompressedDir>$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '$(IntermediateOutputPath)', 'dashboard-gz'))</DashboardCompressedDir>
+        </PropertyGroup>
+    </Target>
+
+    <!--
+        The dashboard is built with pnpm when pnpm is installed. Without it the
+        plugin still builds, and serves a note saying the dashboard is missing,
+        so a machine without Node.js can work on the C# side. Pass
+        -p:SkipDashboardBuild=true to skip the frontend on purpose.
+    -->
+    <Target Name="BuildDashboard" BeforeTargets="BeforeBuild" DependsOnTargets="_SetDashboardPaths" Condition="'$(SkipDashboardBuild)' != 'true'">
+        <Exec Command="pnpm --version" IgnoreExitCode="true" EchoOff="true" StandardOutputImportance="low" StandardErrorImportance="low">
+            <Output TaskParameter="ExitCode" PropertyName="_PnpmExitCode" />
+        </Exec>
+        <Message Condition="'$(_PnpmExitCode)' != '0'" Importance="high" Text="pnpm was not found, so the dashboard was not built. Install Node.js and pnpm to include it." />
+        <CallTarget Condition="'$(_PnpmExitCode)' == '0'" Targets="_BuildDashboardWithPnpm" />
+    </Target>
+
+    <!-- Inputs and Outputs make this incremental: pnpm only runs when a
+         frontend file changed since the last build. -->
+    <Target Name="_BuildDashboardWithPnpm" Inputs="@(DashboardSource)" Outputs="$(DashboardBuildDir)index.html">
+        <Exec Command="pnpm install --frozen-lockfile" WorkingDirectory="$(DashboardSourceDir)" />
+        <Exec Command="pnpm run build" WorkingDirectory="$(DashboardSourceDir)" EnvironmentVariables="DASHBOARD_OUT_DIR=$(DashboardBuildDir)" />
+    </Target>
+
+    <!--
+        Compresses the built files and embeds the compressed bytes, so the DLL
+        stays small and the controller can send them as they are. The items
+        are created by the task rather than a glob, because a glob is expanded
+        when the project loads, before any of these files exist.
+    -->
+    <UsingTask TaskName="GzipDashboardAssets" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)/Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <SourceDir ParameterType="System.String" Required="true" />
+            <DestinationDir ParameterType="System.String" Required="true" />
+            <LogicalNamePrefix ParameterType="System.String" Required="true" />
+            <Resources ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System.Collections.Generic" />
+            <Using Namespace="System.IO" />
+            <Using Namespace="System.IO.Compression" />
+            <Using Namespace="Microsoft.Build.Utilities" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                // Rebuilt from scratch, so a file deleted from the frontend
+                // can't linger as a stale resource.
+                if (Directory.Exists(DestinationDir))
+                    Directory.Delete(DestinationDir, true);
+
+                var resources = new List<ITaskItem>();
+                if (Directory.Exists(SourceDir))
+                {
+                    var sourceRoot = Path.GetFullPath(SourceDir).TrimEnd('/', '\\');
+                    foreach (var file in Directory.EnumerateFiles(sourceRoot, "*", SearchOption.AllDirectories))
+                    {
+                        var relativePath = file.Substring(sourceRoot.Length + 1).Replace('\\', '/');
+                        var destination = Path.Combine(DestinationDir, relativePath + ".gz");
+                        Directory.CreateDirectory(Path.GetDirectoryName(destination));
+                        using (var input = File.OpenRead(file))
+                        using (var output = File.Create(destination))
+                        using (var gzip = new GZipStream(output, CompressionLevel.Optimal))
+                            input.CopyTo(gzip);
+
+                        var item = new TaskItem(destination);
+                        item.SetMetadata("LogicalName", LogicalNamePrefix + relativePath);
+                        resources.Add(item);
+                    }
+                }
+
+                Resources = resources.ToArray();
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="EmbedDashboard" BeforeTargets="BeforeBuild" AfterTargets="BuildDashboard" DependsOnTargets="_SetDashboardPaths">
+        <GzipDashboardAssets SourceDir="$(DashboardBuildDir)" DestinationDir="$(DashboardCompressedDir)" LogicalNamePrefix="Dashboard/">
+            <Output TaskParameter="Resources" ItemName="EmbeddedResource" />
+        </GzipDashboardAssets>
+    </Target>
+</Project>

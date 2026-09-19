@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/ShokoAnime/ShokoServer/master/Shoko.BuildTools/manifest.schema.json",
+  "id": "616d29bb-c4ab-48e7-9ac2-e16d3c749a92",
+  "type": "package",
+  "name": "Sample: Dashboard",
+  "overview": "A web page built with Vite, compressed into the plugin at build time, and served by the plugin with its own API. A sample plugin.",
+  "authors": "Shoko",
+  "repository_url": "https://github.com/ShokoAnime/SamplePlugins",
+  "releases": []
+}

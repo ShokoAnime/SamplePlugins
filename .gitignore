@@ -5,3 +5,4 @@ dist/
 .vs/
 .vscode/
 .idea/
+node_modules/

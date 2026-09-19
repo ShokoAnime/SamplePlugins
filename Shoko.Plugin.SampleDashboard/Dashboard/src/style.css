@@ -1,0 +1,14 @@
+body {
+  margin: 2rem;
+  font-family: system-ui, sans-serif;
+}
+
+dl {
+  display: grid;
+  grid-template-columns: max-content auto;
+  gap: 0.25rem 1rem;
+}
+
+dd {
+  margin: 0;
+}
