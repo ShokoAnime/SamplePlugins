@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shoko.Abstractions.Core.Services;
+using Shoko.Abstractions.Extensions;
 using Shoko.Abstractions.Plugin;
 using Shoko.Abstractions.Web.Attributes;
 using Shoko.Plugin.SampleWebApi.Models;
@@ -33,7 +34,7 @@ public class StatusController(ISystemService systemService, IPluginManager plugi
     [HttpGet]
     public ActionResult<PluginStatus> GetStatus()
     {
-        var version = pluginManager.GetPluginInfo<Plugin>()?.Version.Version.ToString(3) ?? "unknown";
+        var version = pluginManager.GetPluginInfo<Plugin>()!.Version.Version.ToSemanticVersioningString();
         return new PluginStatus(version, systemService.IsStarted, systemService.InSetupMode, systemService.IsDatabaseBlocked);
     }
 }

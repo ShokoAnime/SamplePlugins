@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Shoko.Abstractions.Config;
@@ -56,7 +57,7 @@ public class SampleConfiguration : IConfiguration
     /// <returns>A message for the settings page.</returns>
     [CustomAction(Theme = DisplayColorTheme.Primary, Position = DisplayButtonPosition.Top, SectionName = "Connection")]
     [Display(Name = "Test Connection")]
-    public ConfigurationActionResult TestConnection(ConfigurationActionContext<SampleConfiguration> context)
+    public async Task<ConfigurationActionResult> TestConnection(ConfigurationActionContext<SampleConfiguration> context)
     {
         if (context.Configuration.ApiKey is not { Length: > 0 } apiKey)
             return new("Enter an API key first.", DisplayColorTheme.Warning);
@@ -73,7 +74,7 @@ public class SampleConfiguration : IConfiguration
         {
             // Custom actions are synchronous, so the call is waited on here.
             var client = context.PluginManager.GetRequiredService<SampleApiClient>();
-            return client.CheckConnection(serverAddress, apiKey).GetAwaiter().GetResult()
+            return await client.CheckConnection(serverAddress, apiKey)
                 ? new($"Connected to {serverAddress.Host}.", DisplayColorTheme.Important)
                 : new($"{serverAddress.Host} rejected the API key.", DisplayColorTheme.Warning);
         }

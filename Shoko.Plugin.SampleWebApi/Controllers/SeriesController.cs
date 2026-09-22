@@ -25,9 +25,7 @@ namespace Shoko.Plugin.SampleWebApi.Controllers;
 [Route($"api/plugin/{Plugin.RouteNamespace}/Series")]
 public class SeriesController(IMetadataService metadataService, IActionService actionService, IUserService userService) : ControllerBase
 {
-    // An action's ID is a UUIDv5 of its type's full name, in the plugin ID's
-    // namespace, so it can be worked out here without a lookup by name.
-    private static readonly Guid _summarizeActionID = UuidUtility.GetV5(typeof(SummarizeSeriesAction).FullName!, new(Plugin.PluginID));
+    private readonly Guid _summarizeActionID = actionService.GetActionInfo<SummarizeSeriesAction>()!.Id;
 
     /// <summary>
     /// Get a summary of one series.

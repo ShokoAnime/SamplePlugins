@@ -46,11 +46,11 @@ public class LogLibraryStatisticsAction(
     /// <inheritdoc/>
     public Task Execute(CancellationToken token = default)
     {
-        // Runs on a queue worker. The token only fires on shutdown, and there
-        // is no way for a user to stop one run, so keep this short.
         var seriesCount = metadataService.GetAllShokoSeries().Count();
-        token.ThrowIfCancellationRequested();
         var videoCount = videoService.GetAllVideos().Count();
+
+        token.ThrowIfCancellationRequested();
+
         logger.LogInformation("The library has {SeriesCount} series and {VideoCount} videos.", seriesCount, videoCount);
         return Task.CompletedTask;
     }

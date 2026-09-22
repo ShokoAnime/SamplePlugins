@@ -51,6 +51,9 @@ public class DashboardController : ControllerBase
     [HttpGet("{**path}")]
     public IActionResult GetFile([FromRoute] string? path = null)
     {
+        if (_assets.Value.Count is 0)
+            return NotFound("The dashboard was not built into this copy of the plugin.");
+
         path ??= string.Empty;
         if (!_assets.Value.TryGetValue(path, out var asset))
         {
@@ -58,11 +61,10 @@ public class DashboardController : ControllerBase
             // with the page would turn a missing script into a confusing
             // parse error in the browser.
             if (Path.HasExtension(path) || !_assets.Value.TryGetValue("index.html", out asset))
-                return _assets.Value.Count is 0 ? NotFound("The dashboard was not built into this copy of the plugin.") : NotFound();
+                return NotFound();
         }
 
-        var acceptsGzip = Request.GetTypedHeaders().AcceptEncoding
-            .Any(encoding => encoding.Value.Equals("gzip", StringComparison.OrdinalIgnoreCase) && encoding.Quality is not 0);
+        var acceptsGzip = Request.GetTypedHeaders().AcceptEncoding.Any(encoding => encoding.Value.Equals("gzip", StringComparison.OrdinalIgnoreCase) && encoding.Quality is not 0);
         Response.Headers.CacheControl = asset.IsHashed ? HashedCacheControl : UnhashedCacheControl;
         // The body depends on Accept-Encoding, so caches must key on it too.
         Response.Headers.Vary = HeaderNames.AcceptEncoding;
