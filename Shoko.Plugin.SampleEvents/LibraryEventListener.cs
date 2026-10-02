@@ -83,7 +83,7 @@ public sealed class LibraryEventListener(
         {
             _pendingPaths.TryRemove(eventArgs.Path, out _);
             if (eventArgs.IsNewVideo)
-                logger.LogInformation("New video {VideoID} hashed: {Path}", eventArgs.Video.ID, eventArgs.Path);
+                logger.LogInformation("New video {VideoID} hashed: {Path}", eventArgs.Video.LocalID, eventArgs.Path);
         }
         catch (Exception ex)
         {
@@ -94,15 +94,16 @@ public sealed class LibraryEventListener(
     private void OnReleaseSaved(object? sender, VideoReleaseSavedEventArgs eventArgs)
     {
         // The release links the video to its series, so this is the first
-        // point at which there is a series to summarize.
+        // point at which there is a series to summarize. ID is the series'
+        // MetadataGuid; the Shoko lookups take its LocalID.
         try
         {
             foreach (var series in eventArgs.Video.Series)
-                _ = ScheduleSummary(series.ID);
+                _ = ScheduleSummary(series.LocalID);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to handle a saved release for video {VideoID}.", eventArgs.Video.ID);
+            logger.LogError(ex, "Failed to handle a saved release for video {VideoID}.", eventArgs.Video.LocalID);
         }
     }
 
