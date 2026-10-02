@@ -25,7 +25,7 @@ namespace Shoko.Plugin.SampleWebApi.Controllers;
 [Route($"api/plugin/{Plugin.RouteNamespace}/Series")]
 public class SeriesController(IMetadataService metadataService, IActionService actionService, IUserService userService) : ControllerBase
 {
-    private readonly Guid _summarizeActionID = actionService.GetActionInfo<SummarizeSeriesAction>()!.Id;
+    private readonly Guid _summarizeActionID = actionService.GetActionInfo<SummarizeSeriesAction>()!.ID;
 
     /// <summary>
     /// Get a summary of one series.
@@ -39,7 +39,7 @@ public class SeriesController(IMetadataService metadataService, IActionService a
         if (metadataService.GetShokoSeriesByID(seriesID) is not { } series)
             return NotFound();
 
-        return new SeriesSummary(series.ID, series.PreferredTitle?.Value ?? series.Title, series.Episodes.Count, series.Videos.Count);
+        return SeriesSummary.FromSeries(series);
     }
 
     /// <summary>
@@ -60,7 +60,7 @@ public class SeriesController(IMetadataService metadataService, IActionService a
         // Passing the user applies the action's permission check. A null
         // caller would skip it, which is only right for trusted server code.
         var user = userService.GetUserFromHttpContext(HttpContext);
-        if (await actionService.InvokeAsync(_summarizeActionID, series, user, cancellationToken) is { } rejected)
+        if (await actionService.InvokeAsync(_summarizeActionID, series, caller: user, token: cancellationToken) is { } rejected)
             return BadRequest(rejected.Reason);
 
         return Accepted();

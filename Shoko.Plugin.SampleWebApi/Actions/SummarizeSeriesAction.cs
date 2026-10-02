@@ -1,9 +1,9 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Shoko.Abstractions.Actions;
-using Shoko.Plugin.SampleWebApi.Hubs;
+using Shoko.Plugin.SampleWebApi.Feeds;
+using Shoko.Plugin.SampleWebApi.Models;
 
 namespace Shoko.Plugin.SampleWebApi.Actions;
 
@@ -15,9 +15,9 @@ namespace Shoko.Plugin.SampleWebApi.Actions;
 /// episode or video equivalent) directly. An intermediate base class of your
 /// own fails the server's start-up.
 /// </remarks>
-/// <param name="hubContext">Used to tell connected clients the summary is done.</param>
+/// <param name="feed">Used to tell connected clients the summary is done.</param>
 /// <param name="logger">The logger.</param>
-public class SummarizeSeriesAction(IHubContext<EventsHub> hubContext, ILogger<SummarizeSeriesAction> logger) : SeriesAction
+public class SummarizeSeriesAction(SampleWebApiFeed feed, ILogger<SummarizeSeriesAction> logger) : SeriesAction
 {
     /// <inheritdoc/>
     public override string Name => "Summarize Series";
@@ -33,9 +33,10 @@ public class SummarizeSeriesAction(IHubContext<EventsHub> hubContext, ILogger<Su
 
     /// <inheritdoc/>
     /// <remarks>
-    /// Runs on the request thread, on a different instance than
-    /// <see cref="Execute"/>, so keep it a cheap check. Returning a result
-    /// refuses the run, and the API answers <c>400</c> with the reason.
+    /// Asked twice: on the request, where a refusal makes the API answer
+    /// <c>400</c> with the reason, and again in the queue right before
+    /// <see cref="Execute"/>, where a refusal skips the run. Keep it cheap and
+    /// free of side effects, and answer about the present.
     /// </remarks>
     public override Task<ActionValidationResult?> Validate(CancellationToken token = default)
         => Task.FromResult(Series.Videos.Count is 0 ? new ActionValidationResult($"\"{Series.Title}\" has no files to summarize.") : null);
@@ -44,6 +45,6 @@ public class SummarizeSeriesAction(IHubContext<EventsHub> hubContext, ILogger<Su
     public override async Task Execute(CancellationToken token = default)
     {
         logger.LogInformation("{Title}: {EpisodeCount} episodes, {VideoCount} videos.", Series.Title, Series.Episodes.Count, Series.Videos.Count);
-        await hubContext.Clients.All.SendAsync("SeriesSummarized", Series.ID, Series.Title, token).ConfigureAwait(false);
+        await feed.SendSeriesSummarized(SeriesSummary.FromSeries(Series)).ConfigureAwait(false);
     }
 }
