@@ -22,9 +22,10 @@ public class OriginalNameRelocator : IRelocationProvider
 
     /// <inheritdoc/>
     /// <remarks>
-    /// Declared <c>false</c>, so clients can grey out moving, and newer servers
-    /// ignore the move half of every result. <see cref="GetPath"/> skips the
-    /// move as well, so the sample behaves the same on older servers.
+    /// Declared <c>false</c>, so clients can grey out moving, and the server
+    /// treats every result as <see cref="RelocationResult.SkipMove"/>.
+    /// <see cref="GetPath"/> is still asked when moving is enabled, and only
+    /// decides the name.
     /// </remarks>
     public bool SupportsMoving => false;
 
@@ -34,19 +35,14 @@ public class OriginalNameRelocator : IRelocationProvider
         // GetPath runs for previews too, and the context looks identical, so
         // it must never have side effects. Return an error rather than
         // throwing: the message is what the user sees.
-        var result = new RelocationResult { SkipMove = true };
         if (!context.RenameEnabled)
-        {
-            result.SkipRename = true;
-            return result;
-        }
+            return new RelocationResult { SkipRename = true };
 
         if (context.Video.ReleaseInfo?.OriginalFilename is not { Length: > 0 } originalFilename)
             return RelocationResult.FromError("The release has no original file name.");
 
         // The name comes from a remote database, so make it safe for every
         // file system before handing it back.
-        result.FileName = originalFilename.ReplaceInvalidPathCharacters();
-        return result;
+        return new RelocationResult { FileName = originalFilename.ReplaceInvalidPathCharacters() };
     }
 }
