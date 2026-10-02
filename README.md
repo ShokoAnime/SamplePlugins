@@ -11,7 +11,7 @@ when you want to see how a particular feature is done. The
 [plugin documentation](https://docs.shokoanime.com/daily/writing-plugins/getting-started)
 covers the concepts behind all of it.
 
-The samples build against `Shoko.Abstractions` 6.0.0-alpha.92.
+The samples build against `Shoko.Abstractions` 6.0.0-alpha.97.
 
 ## The samples
 
@@ -23,7 +23,7 @@ Each folder is a separate plugin, with its own plugin ID and `manifest.json`.
 | [`Shoko.Plugin.SampleWithSettingsRelocator`](Shoko.Plugin.SampleWithSettingsRelocator) | A relocation provider with settings stored per preset, honouring the rename and move switches, and choosing a destination with the relocation service's folder helpers. |
 | [`Shoko.Plugin.SampleConfiguration`](Shoko.Plugin.SampleConfiguration) | A settings page from a plain class: a secret, descriptions from XML `<summary>` comments, a "Test Connection" button, reading the settings where they are used, and reacting when they are saved. |
 | [`Shoko.Plugin.SampleEvents`](Shoko.Plugin.SampleEvents) | `IPlugin.Setup` and `IPlugin.Ready`, a hosted service that subscribes to file, release and series events safely, and a queue job that does the actual work. |
-| [`Shoko.Plugin.SampleWebApi`](Shoko.Plugin.SampleWebApi) | API controllers and a SignalR hub under one route namespace, the startup and database gates, a global action and a series action, and running an action on behalf of the calling user. |
+| [`Shoko.Plugin.SampleWebApi`](Shoko.Plugin.SampleWebApi) | API controllers and a SignalR hub under one route namespace, a feed on the server's aggregate hub, the startup and database gates, a global action and a series action, and running an action on behalf of the calling user. |
 | [`Shoko.Plugin.SampleProviders`](Shoko.Plugin.SampleProviders) | A release info provider and a hash provider: found without any registration, identified by their type names, and disabled until a user turns them on. |
 | [`Shoko.Plugin.SampleDashboard`](Shoko.Plugin.SampleDashboard) | A web page built with Vite and pnpm, compressed into the plugin at build time, and served by the plugin next to its own API. |
 
@@ -50,7 +50,8 @@ Some things are the same in every plugin, so they are only explained once here.
 - **Plugins that serve HTTP use one namespace for all of it.** The API lives
   under `/api/plugin/<Namespace>/`, pages and assets under
   `/plugin/<Namespace>/`, and SignalR hubs under `/signalr/plugin/<Namespace>/`.
-  Here each sample uses its own name, such as `SampleWebApi`.
+  A feed on the server's aggregate hub takes the same name. Here each sample
+  uses its own name, such as `SampleWebApi`.
 
 The settings the projects share, such as the target framework and generating
 the documentation file, are in `Directory.Build.props`. If you copy a project
