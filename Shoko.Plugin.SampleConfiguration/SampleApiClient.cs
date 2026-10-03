@@ -22,7 +22,7 @@ public class SampleApiClient(HttpClient httpClient, ConfigurationProvider<Sample
     /// <param name="serverAddress">The address of the service.</param>
     /// <param name="apiKey">The API key to try.</param>
     /// <param name="cancellationToken">A token to cancel the request.</param>
-    /// <returns><see langword="true"/> if the key was accepted, <see langword="false"/> if it was refused.</returns>
+    /// <returns><c>true</c> if the key was accepted, <c>false</c> if it was refused.</returns>
     /// <exception cref="HttpRequestException">The service could not be reached, or answered with an unexpected error.</exception>
     /// <exception cref="TaskCanceledException">The request timed out, or was cancelled.</exception>
     public async Task<bool> CheckConnection(Uri serverAddress, string apiKey, CancellationToken cancellationToken = default)

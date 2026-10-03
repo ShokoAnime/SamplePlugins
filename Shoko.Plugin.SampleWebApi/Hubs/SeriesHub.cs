@@ -23,7 +23,7 @@ public class SeriesHub(IMetadataService metadataService) : Hub
     /// Get a summary of one series.
     /// </summary>
     /// <param name="seriesID">The Shoko series ID.</param>
-    /// <returns>The summary, or <see langword="null"/> if there is no such series.</returns>
+    /// <returns>The summary, or <c>null</c> if there is no such series.</returns>
     public SeriesSummary? GetSummary(int seriesID)
         => metadataService.GetShokoSeriesByID(seriesID) is { } series ? SeriesSummary.FromSeries(series) : null;
 }
