@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-        <PackageReference Include="Shoko.Abstractions" Version="6.0.0-alpha.97" ExcludeAssets="runtime" />
-        <PackageReference Include="Shoko.BuildTools.Targets" Version="0.3.0" PrivateAssets="All" ExcludeAssets="runtime" />
+        <PackageReference Include="Shoko.Abstractions" Version="6.0.0-alpha.98" ExcludeAssets="runtime" />
+        <PackageReference Include="Shoko.BuildTools.Targets" Version="0.3.2" PrivateAssets="All" ExcludeAssets="runtime" />
     </ItemGroup>
 </Project>

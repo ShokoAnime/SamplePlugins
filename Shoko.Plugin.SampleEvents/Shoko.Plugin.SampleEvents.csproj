@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-        <PackageReference Include="Shoko.Abstractions" Version="6.0.0-alpha.97" ExcludeAssets="runtime" />
+        <PackageReference Include="Shoko.Abstractions" Version="6.0.0-alpha.98" ExcludeAssets="runtime" />
         <!-- Queue jobs live in their own package. The server ships it, and it
              brings EF Core and SQLite, whose native libraries "runtime" alone
              does not exclude. -->
         <PackageReference Include="Shoko.QueueProcessor" Version="6.0.0-alpha.9" ExcludeAssets="runtime;native" />
-        <PackageReference Include="Shoko.BuildTools.Targets" Version="0.3.0" PrivateAssets="All" ExcludeAssets="runtime" />
+        <PackageReference Include="Shoko.BuildTools.Targets" Version="0.3.2" PrivateAssets="All" ExcludeAssets="runtime" />
     </ItemGroup>
 </Project>
