@@ -29,8 +29,8 @@ public class SampleRelocator(IVideoRelocationService relocationService) : IReloc
     /// <inheritdoc/>
     /// <remarks>
     /// This is the overload the server calls for a provider with a
-    /// configuration. The non-generic one is never called, so it is left at
-    /// its default.
+    /// configuration. The interface implements the non-generic one by handing
+    /// a configured context on to this one, so it is left out here.
     /// </remarks>
     public RelocationResult GetPath(RelocationContext<SampleRelocatorConfiguration> context)
     {
