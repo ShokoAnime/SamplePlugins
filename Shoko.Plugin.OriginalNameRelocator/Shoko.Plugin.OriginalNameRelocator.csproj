@@ -2,7 +2,7 @@
     <ItemGroup>
         <!-- The server already has these assemblies. Shipping a second copy
              makes the server skip the plugin, so only compile against them. -->
-        <PackageReference Include="Shoko.Abstractions" Version="6.0.0-alpha.98" ExcludeAssets="runtime" />
+        <PackageReference Include="Shoko.Abstractions" Version="6.0.0-alpha.99" ExcludeAssets="runtime" />
         <!-- Embeds the identity from manifest.json into the assembly. -->
         <PackageReference Include="Shoko.BuildTools.Targets" Version="0.3.2" PrivateAssets="All" ExcludeAssets="runtime" />
     </ItemGroup>
