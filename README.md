@@ -11,7 +11,7 @@ when you want to see how a particular feature is done. The
 [plugin documentation](https://docs.shokoanime.com/daily/writing-plugins/getting-started)
 covers the concepts behind all of it.
 
-The samples build against `Shoko.Abstractions` 6.0.0-alpha.98.
+The samples build against `Shoko.Abstractions` 6.0.0-alpha.99.
 
 ## The samples
 
