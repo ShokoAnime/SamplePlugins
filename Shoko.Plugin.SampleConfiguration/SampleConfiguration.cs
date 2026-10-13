@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Shoko.Abstractions.Config;
-using Shoko.Abstractions.Config.Attributes;
-using Shoko.Abstractions.Config.Enums;
+using Shoko.Abstractions.UI.Attributes;
+using Shoko.Abstractions.UI.Enums;
 
 namespace Shoko.Plugin.SampleConfiguration;
 
@@ -55,7 +55,7 @@ public class SampleConfiguration : IConfiguration
     /// </summary>
     /// <param name="context">The action context, carrying the unsaved configuration.</param>
     /// <returns>A message for the settings page.</returns>
-    [CustomAction(Theme = DisplayColorTheme.Primary, Position = DisplayButtonPosition.Top, SectionName = "Connection")]
+    [CustomAction(Theme = DisplayColorTheme.Primary, Position = DisplayButtonPosition.Start, SectionName = "Connection")]
     [Display(Name = "Test Connection")]
     public async Task<ConfigurationActionResult> TestConnection(ConfigurationActionContext<SampleConfiguration> context)
     {
